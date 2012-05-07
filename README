@@ -1,0 +1,183 @@
+This readme describes compilation and operation of spinsim GSL from the command line, as well as giving some of the technical details on the program's code and structure. This document is by no means comprehensive; it's recommended to read the Spinsim GSL User Manual for a more detailed explanation of the Spinsim GSL program. The User Manual may be found under the doc/ sub-directory of the Spinsim GSL project; the User Manual is more friendly and gives a detailed overview of the GUI and the program function in general. The README is intended as a supplement for features not covered in the user manual.
+
+>>> How to make:
+
+If it's your first time running the downloaded program use
+
+	make all
+	
+To recompile the code, run 
+
+	make
+	
+or
+
+	make gui
+	
+if the GUI PY files are missing.
+
+	make clean
+	
+will clean up the old files.
+
+
+>>> *Way Cool* Features
+
+These features are sparsely described in the Spinsim GSL manual. A more detailed description for each is below. See chapter 5 of the manual for a description of these features.
+
+(1) Calculation of GMR instead of single-layer magnetization
+Turning this on will output the GMR between layers 0 and 1 in the simulation (the bottom-most two layers) instead of just the magnetization of layer 0.
+
+To turn this on, uncomment
+
+	#define CALCULATE_GMR 1
+	
+at the top of spinsim.c (line 30 or thereabout) and recompile, possibly using 'make'
+
+(2) Output magnetization of layer 1 instead of layer 0
+Turning this on will output the magnetization of the second-to-bottommost layer in the simulation, rather than the bottom layer. Also, the initial magnetization of layer 1 will be flipped during sweep-up simulation, rather than that of layer 0. Warning: running this with a simulation where layer 1 is fixed may have questionable results.
+
+To turn this on, set
+
+	#define LOOK_AT_LAYER_2 1
+	
+to define LOOK_AT_LAYER_2 as 1, at the top of spinsim.c (line 37 or thereabout) and recompile, possibly using 'make'
+
+(3) Output average magnetization
+By default, spinsim only outputs the FINAL magnetization of the layer it is looking at (layer 0 by default, unless #2 turned on as above). Turning this feature on makes it output the time-averaged magnetization, rather than the final magnetization. If calculate GMR is turned on as in #1, it'll output the time-averaged GMR.
+
+To turn this on, uncomment
+
+	#define AVERAGE_MAGNETIZATION 1
+	
+at the top of spinsim.c (line 33 or thereabout) and recompile, possibly using 'make'
+
+(4) Draw x-y plot of Magnetization vs H(z) or Magnetization vs J, holding the other external variable constant
+This allows the user to plot, for example, the behavior of the magnetization for a H(z) sweep when J is held constant, or J sweep when H(z) is held constant. The following conditions must be adhered to:
+
+	i. Run the simulation with the number-of-points-to-calculate for H(z) set to 1 -OR- number-of-points-to-calculate for J set to 1. I.e., keep one variable (J or H(z)) constant while sweeping the other variable (H(z) or J respectively)
+
+	ii. Select the appropriate menu option from the Plot Types in the GUI
+
+This should generate your plot!
+
+(5) Re-normalizing the vector length
+Theoretically, the length of the magnetization vector should never deviate from 1. There's a bug (mathematical or technical) in the integration, where long-running integrations can result in the vector length dropping significantly. Turning on vector re-normalization can be done by defining INT_RENORM_VECTOR. The vector length will be re-normalized to 1 every time it drops below INT_RENORM_VECTOR_TOL.
+
+(6) Minimum step-size definition
+If the integrator takes a very long time to compute a single point, un-comment the INT_MIN_STEP_SZ define. Set this to 1e-16 or 1e-17. This will put a lower limit on the step-size of the integrator and allow it to finish in a reasonable amount of time. Usually, with the default gsl_odeiv_step_rk4 integrator, this is not a problem.
+Make sure to uncomment the INT_TIME_DEBUG define and set INT_TIME_SECONDS to the value, in seconds, before the spinsim executable tells you that the current integration is taking a long time.
+
+(7) Integrator type definition
+INTEGRATOR_TO_USE defines the integration altorithm being used. The default is gsl_odeiv_step_rk4. See the GSL documentation for details.
+
+(8) Switch both layers 0 and 1
+Typical behavior is to switch (flip the z component of) the layer that is being observed. In the general case this is layer 0, if LOOK_AT_LAYER_2 is set to 1 this will be layer 1. Uncommenting the define SWITCH_BOTH_LAYERS at the top of spinsim.c will switch both layer 0 and layer 1's z-components in the 'sweep-up' simulation
+
+(9) Switching polarization model
+The default polarization model used by Spinsim GSL is the Xiao model. The Slonczewski form is offered as well; the form used may be changed by commenting one of the defines at the top of spinsim.c top-level file:
+
+#define POLARISATION_XIAO
+//#define POLARISATION_SLONCZEWSKI
+
+Make sure that one is commented and one is un-commented, otherwise the program may not compile.
+
+As of 2010-12-07, POLARISAITON_SLONCZEWSKI can and should be used. XIAO form polarisation is deprecated although may be fixed and added at a later time.
+
+(10) Sweeping field and current
+There are several options for sweeping field and current. At the top of spinsim.c, if the define
+
+#define RESTART_Y_FROM_INIT_VALS
+
+is uncommented, the Y values will be restarted for every (field, current) point from the initial conditions. If the define
+
+#define SWEEP_CURRENT
+
+is uncommented, the Y values will be restarted for every field sweep but will be kep through the current sweep (so that the results from one current value simulation will be used to start the next). If the define
+
+#define SWEEP_FIELD_AND_CURRENT
+
+is uncommented, the Y values will not be restarted through the simulation, at all. However, sweep-up and sweep-down values will be kept separate. ONLY ALLOW ONE OF THESE DEFINES TO BE UN-COMMENTED AT A TIME!
+
+(11) Tracking switching points
+Uncommenting the define
+
+#define TRACK_SWITCHING_POINT 1
+
+allows the spinsim engine to track and output the switching points to stdout. This allows tracking, for exampling, switching characteristics for H-I diagrams and possibly J_exch values.
+
+(12) Tracking settling time
+Allows for estimation of alpha in the layers. Uncomment the define TRACK_TSETTLING_Z to track settling in _z dimension - this is when the z component size is below TSETTLING_CRITERIA_Z. When TRACK_TSETTLING_X is defined, then we will track the time to settle the x component BELOW the magnitude of TSETTLING_CRITERIA. THis feature only works in a limited scope; to increase its efficacy some modification to the code may be worthwhile.
+
+(13) Something about FMR resonance mode tracking. In the llg1.c file, uncomment the 
+
+#define FMR_FIELD
+
+line. This will allow the time-dependent H Field to be applied along the X axis, to the free layer. The time-independent portion will be subtracted from the total H-field being applied (as returned from the TimeDepFun function) and the time-independent portion will still be applied on the z axis. So, if you define
+
+H = H_dc + H_ac
+
+H_ac will be applied along the x direction and H_dc will be applied along the z direciton, when this is un-commented.
+
+Note that this functionality is ONLY implemented for the fixed-free model. The other configurations do NOT allow FMR-like field application yet.
+
+(14) Calculation of exchange energy
+It is possible to look at an analog for the exchange energy between the bottom two layers in any system, for a single point simulation. Un-commenting the CALC_EXCH_E define in spinsim.c will replace the z-component data with the sine of the angle between the magnetization of layers 0 and 1 for every point in time. This allows one to estimate the difference in orientation of the magnetizations; a peak in this corresponds to a peak in the exchange energy between layers 0 and 1.
+
+>>> Files in this Project:
+Below is a description of select files and folders in this project. A better description may be found in the User Manual, in the doc/ folder.
+
+depricated/* - code or other resources that are no longer used by the project, but are kept for reference
+doc/* - where this README sits. Documentation.
+RUNS/* - contains the output of several example runs
+timedep_user_funs/*  - sample definitions for user-defined functions. Structure explained in the User Manual.
+
+apngasm.c - source code for Apngasm, the animated PNG assembler
+fun_params - parameters for time-dependent functions. Written to by the GUI's time dependent function setup dialog, read by the Spinsim C engine.
+llg*.c - source code for the LLG equations used as the differnential equations for layer magnetization
+*.ui - forms for the GUI (QT4 designer format)
+spinsim.c - top-level C engine code
+spin_helpers.c - colletion of C helper functions, used by spinsim.c and sub-projects
+spinsim_gui.py - top-level Python GUI code
+spinsim_make_plots.py - command line utility for generating plots and animations. Called by the spinsim top-level GUI
+TimeDep_Handler.py - handler for the time dependent function setup dialog
+
+
+
+
+
+>>> Compile
+
+Not really relevant anymore, the makefile should work. But just in case:
+
+	gcc -pthread -lgsl -lgslcblas -lm -o spinsim spinsim.c
+	
+OR (for pedantic, lots of warnings mode)
+	
+	gcc -W -Wall -ansi -pedantic -std=c99 -pthread -lgsl -lgslcblas -lm -o spinsim spinsim.c
+
+
+
+>>> Run Spinsim from Command Line
+
+Examples no longer given. Use the GUI to run it, or look at the command the GUI it launching (the python code echoes the command to stdout) and use/modify this.
+
+
+
+>>> GUI Stuff
+
+Use 'make gui' preferably. But in case:
+
+Compile the QT UI:
+	pyuic4 qt_ui_v2.ui > qt_ui_v2.py
+	pyuic4 timedep_dialog.ui > timedep_dialog.py
+	
+Run the GUI:
+	python spinsim_gui.py
+
+>>> Bugs / Todos
+
+This section discusses bugs, feature requests, and pending 'todo' items for the spinsim project.
+
+(1) Re-write spinsim to take advantage of parallelization through OpenMP rather than pthreads. 
+(2) Re-write the differential equation solver kernel to be able to solve for an any layer within a stack composed of an arbitrary number of layers. The GUI will have to get re-written for this also.

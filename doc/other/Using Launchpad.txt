@@ -1,0 +1,60 @@
+Instructions for Getting, Editing, and Committing File Change to Repository
+
+Launchpad gives us a Bazaar repository to host our files. It's quite a nice revisioning system but can be somewhat confusing to use. This guide will give you the basic "quick start" instructions to get the current spinsim branch, make changes to it, and pushing it to Bazaar.
+
+What you will actually be doing when working on this code is working on your local Bazaar repository and then "pushing" your changes to the server, when you want them made public. 
+
+=-=-= How to get the latest branch =-=-=
+
+Method 1: I don't intend to make any changes to the code.
+Then grab the latest branch off of the Launchpad site! Just go to the project page, view files, and you can download all of the files over HTTP.
+
+Method 2: I want to develop code. Or I might, but I haven't made up my mind yet.
+	(*) Step 1: Sign up on the Launchpad site, https://www.launchpad.net. Make an account. Then, add yourself to the team "spinsim-team". The project we're working on is called "spinsim". You'll have to wait a day or so for me to add you to the team. Note that you don't need to be on the team to get the code, just to push it, so you may continue to the next stea.
+	
+	(*) Step 2: Register an SSH key. Go to your account, and add an SSH2 key. The instructions for creating a key may by found at
+	
+		https://help.launchpad.net/YourAccount/CreatingAnSSHKeyPair
+	
+	After generating a key, copy and paste your key (usually under ~/.ssh/id_key.pub) into the text box on the Add Key page. It'll add the key, you should see a comment like yourname@yourcomputer.
+	
+	Step 3: Get the files. Go to the directory you want to put the current branch. Type the following commands:
+	
+		bzr launchpad-login <your user name>
+		bzr branch lp:spinsim
+	
+	It might ask you for your password and permission to do things, give it what it wants. It should download the files.
+	
+	You're ready to edit!
+	
+=-=-= How to edit the files and commit the changes =-=-=
+
+	There's no special rules for how to edit files. Just edit the files after grabbing the branch. 
+	
+	When you're ready to commit changes, there's a few things to do.
+	
+	Step 1: Add all files you created to the branch. Use the command
+	
+		bzr add <filename>
+	
+	to add each new file. 
+	
+	Step 2: Commit your changes. Use the command 
+	
+		bzr commit -m "<a comment>" 
+	
+	To commit your changes with a comment.
+	
+	Step 3: Push your changes to the repository. Use the command
+	
+		bzr push lp:spinsim
+		
+	It should return with text like
+		
+		Pushed up to revision n.
+		
+	Where n is some number, indicating the new revision. The site will take a few minutes to reflect your changes, but you should be able to see the new files you've added, and the diffs that your changes have imparted on the project files.
+	
+	Congrats! You're now ready to develop code for the spinsim project!	
+	
+(*) Means you only have to do this the first time

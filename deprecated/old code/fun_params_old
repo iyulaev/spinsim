@@ -1,0 +1,16 @@
+#This line defines a DC current dependent sine function for current, with amplitude 0.2*DC current, frequency 1000000000, phase 1.571
+j_sin_dep	0.2	1000000000	1.571
+#This line defines a DC current independent sine function for current, with amplitude 1e5 A/m**2, frequency 1e9, phase 0.785
+j_sin_indep	1e5	1e9	0.785
+#This line defines a external-field dependent size function for external field, with amplitude 0.3*ext field, frequency 2e9, phase 0.4
+hz_sin_dep	0.3	2e9	0.4
+#This line defines a external-field independent size function for external field, with amplitude 1T, frequency 1.5e9, phase 0.6
+hz_sin_indep	1	1.5e9	0.6
+#This line loads user parameters from user-defined, external field dependent, Hz function
+hz_user_dep	timedep_user_funs/hz_dep_fun_file
+#This line loads user parameters from user-defined, external field independent, Hz function
+hz_user_indep	timedep_user_funs/hz_indep_fun_file
+#This line loads user parameters from user-defined, current density independent, j function
+j_user_indep	timedep_user_funs/j_indep_fun_file
+#This line loads user parameters from user-defined, current density dependent, j function
+j_user_dep	timedep_user_funs/j_dep_fun_file

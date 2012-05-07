@@ -1,0 +1,8 @@
+j_sin_dep	2.00000e-01	1.00000e+09	1.57100e+00
+j_sin_indep	1.00000e+05	1.00000e+09	7.86000e-01
+hz_sin_dep	3.00000e-01	2.00000e+09	4.00000e-01
+hz_sin_indep	1.00000e+05	1.50000e+10	0.00000e+00
+j_user_dep	timedep_user_funs/j_dep_fun_file
+j_user_indep	timedep_user_funs/j_indep_fun_file
+hz_user_dep	timedep_user_funs/hz_dep_fun_file
+hz_user_indep	5ns_pulse.txt

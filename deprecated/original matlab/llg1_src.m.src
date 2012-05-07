@@ -1,0 +1,106 @@
+function dy = llg1(t,y)
+
+	% NEED TO IMPORT: percK2, thetaoffset, eye
+	IMPORT_THETAOFFSET %will be replaced by given thetaoffset
+	IMPORT_PERCK2 %will be replaced by given percent of k2
+	IMPORT_EYE %will be replaced by current outer loop iteration
+	APPLESEED %will be replaced with n = <n>, the total number of iterations
+	
+	% Offset for easy axis of free FM layer
+	thetaoffset = thetaoff*pi/180;
+	
+	% These two variables NR/ND take forever to calculate so I've hardcoded them down below
+	
+	% Mutual Demagnetization Tensor
+	% X = 0; Y = 0; Z = 7;
+	% circle
+	% dx=50; dy=50; dz=3;
+	% ellipse
+	% dx = 100; dy = 50; dz = 3;
+	% NR = demagtensor(X,Y,Z,dx,dy,dz);
+	% For infinite lateral size use NR_xx = 0; NR_yy = 0; NR_zz = 0;
+
+	% Self Demagnetization Matrix
+	% X = 0; Y = 0; Z = 0;
+	% circle
+	% dx=50; dy=50; dz=3;
+	% ellipse
+	% dx = 100; dy = 50; dz = 3;
+	% ND = demagtensor(X,Y,Z,dx,dy,dz);
+	% For infinite lateral size use ND_xx = 0; ND_yy = 0; ND_zz = 1;
+	
+	NR = [0.0257,0,0; 0,0.0257,0; 0,0,-0.0515];
+	ND = [0.0680,0,0; 0,0.0680,0; 0,0,0.8640];
+	
+	% imported from Hsweep.m
+	d = 3e-9;               % Free layer thickness, m
+	Ms = 650000; 			% Free layer saturation magnetization, A/m
+	mu0 = 4*pi*1e-7; 		% Magnetic permeability of vaccuum, H/m
+	e = 1.602e-19; 			% Electron charge, -1.602176 x 1e-19 C
+	Gamma = 2.21e5; 		% Gyromagnetic ratio, 2.2127616 x 1e5 s^(-1).A^(-1).m
+	Alpha = 0.01; 			% Gilbert's damping factor, dimensionless
+	hbar = 1.054e-34; 		% Reduced Planck constant, 1.054571 x 1e-34 J.s
+	MRs = 600000;				% Reference layer saturation magnetization, A/m
+	
+	K1 = 3e5;			   % Free layer anisotropy constant, J/m^3
+	K2 = (percK2/100)*K1;   % Free layer anisotropy constant	
+	H_K1 = 2*K1/mu0/Ms;				   % Free layer anisotropy field, A/m
+	H_K2 = 4*K2/mu0/Ms;				   % Free layer anisotropy field, A/m
+	
+	Gamma_bar = Gamma/(1+Alpha^2);
+	Alpha_bar = Alpha*Gamma/(1+Alpha^2);
+	
+	jmin = -1e11;%-0.5e11;
+	jmax = 1.5e11;%1e11;
+	j = linspace(jmin,jmax,n); 
+	
+	% Slonczewski's spin transfert torque coefficient Beta=P*j*Beta_div_P_and_j
+	Beta_div_P_and_j = (Gamma*hbar)/(2*d*mu0*Ms*e);
+	
+	% Pinned layer initial state
+	px = 0; py = 0; pz = 1;
+	p = [px; py; pz];
+	
+%	end of imported random stuff
+
+	% Time dependent parameters
+	Beta = Beta_div_P_and_j*Polarisation(y(1),y(2),y(3),px,py,pz)*j(eye);
+	Beta_bar1 = Alpha*Beta/(1+Alpha^2);
+	Beta_bar2 = Beta/(1+Alpha^2);
+	
+	% Effective field is the sum of the anisotropy field (Hani), the self (HD)
+	% and mutual (HR) demag. fields, and the external field (H)
+	% Applied Field
+	
+	%banana WILL BE the Hz(k) entry that will be set by generate_llg1.pl
+	%PINE APPLE (*without* the space) is a protected keyword
+	PINEAPPLE %will be replaced by Hz(k) entry
+	H = [0; 0; banana];
+	
+	% Anistropic field
+	Hani = [H_K1*y(1)*sin(thetaoffset); 0; H_K1*y(3)*cos(thetaoffset)+H_K2*y(3)*(y(1)^2+y(2)^2)];
+	% Self-demag field
+	HD = -ND*y*Ms;
+	% Mutual demag field
+	HR = -NR*p*MRs;
+	% Effective field
+	Heff = H + Hani + HD + HR;
+
+	% In fact, one has to integrate three differential equations,
+	% one for each component of m
+	% dm_x/dt=fx(m_x,m_y,m_z,t)
+	dy = zeros(3,1);
+
+	dy(1) = -Gamma_bar*(y(2)*Heff(3)-y(3)*Heff(2))-Alpha_bar*((y(1)*y(1)-1)*Heff(1)+...
+		y(1)*y(2)*Heff(2)+y(1)*y(3)*Heff(3))+Beta_bar1*(y(2)*p(3) - y(3)*p(2))...
+		  -Beta_bar2*((y(1)*y(1)-1)*p(1)+y(1)*y(2)*p(2)+y(1)*y(3)*p(3));
+
+	dy(2) = -Gamma_bar*(y(3)*Heff(1)-y(1)*Heff(3))-Alpha_bar*((y(2)*y(2)-1)*Heff(2)+...
+		y(1)*y(2)*Heff(1)+y(2)*y(3)*Heff(3))+Beta_bar1*(y(3)*p(1)-y(1)*p(3))...
+		  -Beta_bar2*((y(2)*y(2)-1)*p(2)+y(1)*y(2)*p(1)+y(2)*y(3)*p(3));
+
+	dy(3) = -Gamma_bar*(y(1)*Heff(2)-y(2)*Heff(1))-Alpha_bar*((y(3)*y(3)-1)*Heff(3)...
+		+y(1)*y(3)*Heff(1)+y(2)*y(3)*Heff(2))+Beta_bar1*(y(1)*p(2)-y(2)*p(1))....
+		  -Beta_bar2*((y(3)*y(3)-1)*p(3)+y(1)*y(3)*p(1)+y(2)*y(3)*p(2));
+	
+	end
